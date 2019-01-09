@@ -2,7 +2,7 @@ use crate::scanner::Token;
 
 pub struct Parser {
     tokens: Vec<Token>,
-    current: usize,
+    index: usize,
 }
 
 #[derive(Debug)]
@@ -29,7 +29,7 @@ pub enum Expr {
 
 impl Parser {
     pub fn new(tokens: Vec<Token>) -> Parser {
-        return Parser { tokens, current: 0 };
+        return Parser { tokens, index: 0 };
     }
 
     pub fn parse(&mut self) -> Result<Node, String> {
@@ -37,14 +37,13 @@ impl Parser {
     }
 
     fn advance(&mut self) -> Option<&Token> {
-        let token = self.tokens.get(self.current);
-        self.current += 1;
+        let token = self.tokens.get(self.index);
+        self.index += 1;
         token
     }
 
-    fn next(&mut self) -> Option<&Token> {
-        self.current += 1;
-        self.tokens.get(self.current)
+    fn current(&mut self) -> Option<&Token> {
+        self.tokens.get(self.index)
     }
 
     fn statements(&mut self) -> Result<Node, String> {
@@ -52,7 +51,7 @@ impl Parser {
         loop {
             statements.push(Box::new(self.statement()?));
 
-            if self.tokens.get(self.current).is_none() {
+            if self.current().is_none() {
                 break;
             }
         }
@@ -68,7 +67,7 @@ impl Parser {
             ExpressionStatement,
         }
 
-        let stype = match self.tokens.get(self.current) {
+        let stype = match self.current() {
             Some(Token::Print) => SType::Print,
             Some(Token::While) => SType::While,
             Some(Token::If) => SType::If,
@@ -131,7 +130,7 @@ impl Parser {
         }
 
         let then = self.block()?;
-        let other = match self.tokens.get(self.current) {
+        let other = match self.current() {
             Some(Token::Else) => {
                 self.advance();
                 self.block()?
@@ -153,7 +152,7 @@ impl Parser {
 
         let mut statements = Vec::new();
         loop {
-            match self.tokens.get(self.current) {
+            match self.current() {
                 Some(Token::CloseBrace) => {
                     self.advance();
                     break;
@@ -183,9 +182,9 @@ impl Parser {
     fn assignment(&mut self) -> Result<Expr, String> {
         let left = self.equality()?;
 
-        match self.tokens.get(self.current) {
+        match self.current() {
             Some(Token::Assign) => {
-                self.next();
+                self.advance();
 
                 let right = self.assignment()?;
                 match left {
@@ -201,15 +200,15 @@ impl Parser {
         let mut left = self.addition()?;
 
         loop {
-            match self.tokens.get(self.current) {
+            match self.current() {
                 Some(Token::Eq) => {
-                    self.next();
+                    self.advance();
 
                     let right = self.addition()?;
                     left = Expr::Eq(Box::new(left), Box::new(right))
                 }
                 Some(Token::Ne) => {
-                    self.next();
+                    self.advance();
 
                     let right = self.addition()?;
                     left = Expr::Ne(Box::new(left), Box::new(right))
@@ -223,15 +222,15 @@ impl Parser {
         let mut left = self.multiplication()?;
 
         loop {
-            match self.tokens.get(self.current) {
+            match self.current() {
                 Some(Token::Plus) => {
-                    self.next();
+                    self.advance();
 
                     let right = self.multiplication()?;
                     left = Expr::Plus(Box::new(left), Box::new(right))
                 }
                 Some(Token::Minus) => {
-                    self.next();
+                    self.advance();
 
                     let right = self.multiplication()?;
                     left = Expr::Minus(Box::new(left), Box::new(right))
@@ -245,9 +244,9 @@ impl Parser {
         let mut left = self.primary()?;
 
         loop {
-            match self.tokens.get(self.current) {
+            match self.current() {
                 Some(Token::Star) => {
-                    self.next();
+                    self.advance();
 
                     let right = self.primary()?;
                     left = Expr::Multiply(Box::new(left), Box::new(right))

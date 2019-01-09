@@ -17,7 +17,7 @@ fn main() -> io::Result<()> {
     let mut buffer = String::new();
     f.read_to_string(&mut buffer)?;
 
-    let mut tokens = scan(&buffer);
+    let tokens = scan(&buffer);
     println!("{:?}", tokens);
 
     let mut parser = Parser::new(tokens.unwrap());
