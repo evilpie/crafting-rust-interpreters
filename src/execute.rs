@@ -6,6 +6,7 @@ use crate::parser::{Expr, Node};
 pub enum Value {
     Number(i32),
     Boolean(bool),
+    Function(fn(Vec<Value>) -> Value)
 }
 
 pub fn execute_node(node: &Box<Node>, vars: &mut HashMap<String, Value>) {
@@ -84,6 +85,17 @@ fn execute_expr(expr: &Box<Expr>, vars: &mut HashMap<String, Value>) -> Value {
         }
         Expr::Number(n) => Value::Number(n),
         Expr::Boolean(b) => Value::Boolean(b),
+        Expr::Call(ref callee, ref arguments) => {
+            match execute_expr(&callee, vars) {
+                Value::Function(fun) => {
+                    let args = arguments.iter().map(|arg| {
+                        execute_expr(&arg, vars)
+                    }).collect();
+                    fun(args)
+                },
+                _ => panic!("expected function callee")
+            }
+        }
         Expr::Assign(ref name, ref expr) => {
             let right = execute_expr(&expr, vars);
             vars.insert(name.to_string(), right);

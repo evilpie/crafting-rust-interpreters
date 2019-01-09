@@ -6,6 +6,7 @@ pub enum Token {
     Plus,
     Minus,
     Star,
+    Comma,
     Semicolon,
     OpenParen,
     CloseParen,
@@ -108,6 +109,10 @@ pub fn scan(source: &str) -> Result<Vec<Token>, String> {
 
             '}' => {
                 tokens.push(Token::CloseBrace);
+            }
+
+            ',' => {
+                tokens.push(Token::Comma);
             }
 
             ';' => {

@@ -21,6 +21,7 @@ pub enum Expr {
     Plus(Box<Expr>, Box<Expr>),
     Minus(Box<Expr>, Box<Expr>),
     Multiply(Box<Expr>, Box<Expr>),
+    Call(Box<Expr>, Vec<Box<Expr>>),
     Assign(String, Box<Expr>),
     Number(i32),
     Identifier(String),
@@ -241,18 +242,64 @@ impl Parser {
     }
 
     fn multiplication(&mut self) -> Result<Expr, String> {
-        let mut left = self.primary()?;
+        let mut left = self.unary()?;
 
         loop {
             match self.current() {
                 Some(Token::Star) => {
                     self.advance();
 
-                    let right = self.primary()?;
+                    let right = self.unary()?;
                     left = Expr::Multiply(Box::new(left), Box::new(right))
                 }
                 _ => return Ok(left),
             }
+        }
+    }
+
+    fn unary(&mut self) -> Result<Expr, String> {
+        match self.current() {
+            Some(Token::Minus) => {
+                self.advance();
+
+                let expr = self.unary()?;
+                Ok(Expr::Minus(Box::new(Expr::Number(0)), Box::new(expr)))
+            }
+            _ => self.call()
+        }
+    }
+
+    fn call(&mut self) -> Result<Expr, String> {
+        let expr = self.primary()?;
+
+        match self.current() {
+            Some(Token::OpenParen) => self.finish_call(expr),
+            _ => Ok(expr)
+        }
+    }
+
+    fn finish_call(&mut self, expr: Expr) -> Result<Expr, String> {
+        self.advance(); // (
+
+        let mut arguments: Vec<Box<Expr>> = Vec::new();
+        match self.current() {
+            Some(Token::CloseParen) => {},
+            _ => loop {
+                let expr = self.expression()?;
+                arguments.push(Box::new(expr));
+
+                match self.current() {
+                    Some(Token::Comma) => {
+                        self.advance();
+                    }
+                    _ => break
+                }
+            }
+        }
+
+        match self.advance() {
+            Some(Token::CloseParen) => Ok(Expr::Call(Box::new(expr), arguments)),
+            _ => Err("expecting ) after calle".to_string())
         }
     }
 

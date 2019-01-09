@@ -7,9 +7,14 @@ mod execute;
 mod parser;
 mod scanner;
 
-use crate::execute::execute_node;
+use crate::execute::{execute_node, Value};
 use crate::parser::Parser;
 use crate::scanner::scan;
+
+fn println(args: Vec<Value>) -> Value {
+    println!("{:?}", args);
+    return Value::Number(42)
+}
 
 fn main() -> io::Result<()> {
     let mut f = File::open("test.txt")?;
@@ -26,6 +31,7 @@ fn main() -> io::Result<()> {
 
     if node.is_ok() {
         let mut vars = HashMap::new();
+        vars.insert("println".to_string(), Value::Function(println));
         execute_node(&Box::new(node.unwrap()), &mut vars);
     }
 
