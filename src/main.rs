@@ -31,7 +31,7 @@ fn main() -> io::Result<()> {
 
     if node.is_ok() {
         let mut vars = HashMap::new();
-        vars.insert("println".to_string(), Value::Function(println));
+        vars.insert("println".to_string(), Value::NativeFunction(println));
         execute_node(&Box::new(node.unwrap()), &mut vars);
     }
 
