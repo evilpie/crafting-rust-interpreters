@@ -2,14 +2,15 @@ use std::collections::HashMap;
 
 use crate::parser::{Expr, Node};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Clone)]
 pub enum Value {
     Number(i32),
     Boolean(bool),
-    NativeFunction(fn(Vec<Value>) -> Value)
-
+    NativeFunction(fn(Vec<Value>) -> Value),
+    Function(Vec<String>, Box<Node>)
 }
 
+// Todo: This is probably going to require a different ownership story
 pub fn execute_node(node: &Box<Node>, vars: &mut HashMap<String, Value>) {
     match **node {
         Node::Statements(ref statements) => {
@@ -23,9 +24,7 @@ pub fn execute_node(node: &Box<Node>, vars: &mut HashMap<String, Value>) {
         }
 
         Node::Fun(ref name, ref parameters, ref body) => {
-            println!("fun {:?}", name);
-
-            
+            vars.insert(name.clone(), Value::Function(parameters.clone(), body.clone()));
         }
 
         Node::Print(ref expr) => {
@@ -98,18 +97,36 @@ fn execute_expr(expr: &Box<Expr>, vars: &mut HashMap<String, Value>) -> Value {
                     let args = arguments.iter().map(|arg| {
                         execute_expr(&arg, vars)
                     }).collect();
+
                     fun(args)
                 },
+                Value::Function(parameters, body) => {
+                    println!("{:?}", parameters);
+
+                    let args = arguments.iter().map(|arg| {
+                        execute_expr(&arg, vars)
+                    });
+
+                    // ToDo: global scope, argument count != paramter count
+                    let mut locals = HashMap::new();
+                    for (name, arg) in parameters.iter().zip(args) {
+                        locals.insert(name.clone(), arg);
+                    }
+
+                    execute_node(&body, &mut locals);
+                    // ToDo: return statment
+                    Value::Number(0)
+                }
                 _ => panic!("expected function callee")
             }
         }
         Expr::Assign(ref name, ref expr) => {
             let right = execute_expr(&expr, vars);
-            vars.insert(name.to_string(), right);
-            right
+            vars.insert(name.to_string(), right.clone());
+            right.clone()
         }
         Expr::Identifier(ref name) => match vars.get(name) {
-            Some(v) => *v,
+            Some(v) => v.clone(),
             None => panic!("no such variable '{}'", name),
         },
     }

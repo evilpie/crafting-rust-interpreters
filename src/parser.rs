@@ -5,7 +5,7 @@ pub struct Parser {
     index: usize,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Node {
     Print(Box<Expr>),
     Fun(String, Vec<String>, Box<Node>),
@@ -15,7 +15,7 @@ pub enum Node {
     Statements(Vec<Box<Node>>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Expr {
     Eq(Box<Expr>, Box<Expr>),
     Ne(Box<Expr>, Box<Expr>),

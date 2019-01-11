@@ -1,9 +1,11 @@
 fun test(a, b) {
-    println(a, b);
+    print a;
+    print b;
 }
 
-a = 10;
+test(true, 42);
 
+a = 10;
 while (a != 0) {
     print a;
     a = a - 1;
