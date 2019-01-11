@@ -21,6 +21,12 @@ pub fn execute_node(node: &Box<Node>, vars: &mut HashMap<String, Value>) {
             execute_expr(&expr, vars);
         }
 
+        Node::Fun(ref name, ref parameters, ref body) => {
+            println!("fun {:?}", name);
+
+            
+        }
+
         Node::Print(ref expr) => {
             println!("print: {:?}", execute_expr(&expr, vars));
         }

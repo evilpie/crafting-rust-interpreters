@@ -8,6 +8,7 @@ pub struct Parser {
 #[derive(Debug)]
 pub enum Node {
     Print(Box<Expr>),
+    Fun(String, Vec<String>, Box<Node>),
     While(Box<Expr>, Box<Node>),
     If(Box<Expr>, Box<Node>, Box<Node>),
     ExpressionStatement(Box<Expr>),
@@ -62,14 +63,18 @@ impl Parser {
     fn statement(&mut self) -> Result<Node, String> {
         enum SType {
             Print,
+            Fun,
             While,
             If,
             Block,
             ExpressionStatement,
         }
 
+        // This is a hack to pacify the borrow checker.
+        // I am open to suggestions!
         let stype = match self.current() {
             Some(Token::Print) => SType::Print,
+            Some(Token::Fun) => SType::Fun,
             Some(Token::While) => SType::While,
             Some(Token::If) => SType::If,
             Some(Token::OpenBrace) => SType::Block,
@@ -78,6 +83,7 @@ impl Parser {
 
         match stype {
             SType::Print => self.print_statement(),
+            SType::Fun => self.fun_statement(),
             SType::While => self.while_statement(),
             SType::If => self.if_statement(),
             SType::Block => self.block(),
@@ -94,6 +100,46 @@ impl Parser {
             _ => return Err("Expected semicolon after print".to_string()),
         }
         Ok(Node::Print(Box::new(expr)))
+    }
+
+    fn fun_statement(&mut self) -> Result<Node, String> {
+        self.advance();
+
+        let name = match self.advance() {
+            Some(Token::Identifier(name)) => name,
+            _ => return Err("expected function name".to_string())
+        }.clone();
+
+        match self.advance() {
+            Some(Token::OpenParen) => {}
+            _ => return Err("expected open parens (".to_string()),
+        }
+
+        let mut parameters: Vec<String> = Vec::new();
+        match self.current() {
+            Some(Token::CloseParen) => {},
+            _ => loop {
+                match self.advance() {
+                    Some(Token::Identifier(name)) => parameters.push(name.clone()),
+                    _ => return Err("expected parameter name".to_string()),
+                }
+
+                match self.current() {
+                    Some(Token::Comma) => {
+                        self.advance();
+                    }
+                    _ => break
+                }
+            }
+        }
+
+        match self.advance() {
+            Some(Token::CloseParen) => {}
+            _ => return Err("expected close parens )".to_string()),
+        }
+
+        let block = self.block()?;
+        Ok(Node::Fun(name, parameters, Box::new(block)))
     }
 
     fn while_statement(&mut self) -> Result<Node, String> {

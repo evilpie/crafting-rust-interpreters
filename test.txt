@@ -1,3 +1,7 @@
+fun test(a, b) {
+    println(a, b);
+}
+
 a = 10;
 
 while (a != 0) {
