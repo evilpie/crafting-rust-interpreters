@@ -10,7 +10,8 @@ pub enum Value {
     Number(i32),
     Boolean(bool),
     NativeFunction(fn(Vec<Value>) -> Value),
-    Function(Vec<String>, Box<Node>, Rc<RefCell<Environment>>)
+    Function(Vec<String>, Box<Node>, Rc<RefCell<Environment>>),
+    Array(Rc<RefCell<Vec<Value>>>),
 }
 
 #[derive(Debug, Clone)]
@@ -204,6 +205,13 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
                 _ => err("expected function callee")
             }
         }
+        Expr::Array(ref values) => {
+            let vals: Result<Vec<Value>, _> = values.iter().map(|arg| {
+                execute_expr(&arg, env)
+            }).collect();
+
+            Ok(Value::Array(Rc::new(RefCell::new(vals?))))
+        }
         Expr::Assign(ref name, ref expr) => {
             let right = execute_expr(&expr, env)?;
             env.borrow_mut().set(name.to_string(), right.clone());
@@ -212,6 +220,17 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
         Expr::Identifier(ref name) => match env.borrow().get(name) {
             Some(v) => Ok(v.clone()),
             None => Err(VMError::Message(format!("no such variable '{}'", name))),
+        }
+        Expr::Get(ref b, ref k) => {
+            let base = execute_expr(b, env)?;
+            let key = execute_expr(k, env)?;
+
+            match (base, key) {
+                (Value::Array(ref array), Value::Number(n)) if n >= 0 => {
+                    Ok(array.borrow().get(n as usize).unwrap_or(&Value::Nothing).clone())
+                },
+                _ => err("can only use array with number index for now")
+            }
         }
     }
 }

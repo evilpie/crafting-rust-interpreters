@@ -10,10 +10,12 @@ pub enum Token {
     Star,
     Comma,
     Semicolon,
-    OpenParen,
-    CloseParen,
-    OpenBrace,
-    CloseBrace,
+    OpenParen, // (
+    CloseParen, // )
+    OpenBracket, // [
+    CloseBracket, // ]
+    OpenBrace, // {
+    CloseBrace, // }
     Number(i32),
     Identifier(String),
     Print,
@@ -26,6 +28,23 @@ pub enum Token {
     False,
 }
 
+fn single_token(ch: char) -> Option<Token> {
+    match ch {
+        '+' => Some(Token::Plus),
+        '*' => Some(Token::Star),
+        '-' => Some(Token::Minus),
+        '(' => Some(Token::OpenParen),
+        ')' => Some(Token::CloseParen),
+        '[' => Some(Token::OpenBracket),
+        ']' => Some(Token::CloseBracket),
+        '{' => Some(Token::OpenBrace),
+        '}' => Some(Token::CloseBrace),
+        ',' => Some(Token::Comma),
+        ';' => Some(Token::Semicolon),
+        _ => None
+    }
+}
+
 pub fn scan(source: &str) -> Result<Vec<Token>, String> {
     let mut iter = source.chars().peekable();
     let mut tokens = Vec::new();
@@ -34,6 +53,12 @@ pub fn scan(source: &str) -> Result<Vec<Token>, String> {
         if n.is_none() {
             break;
         }
+
+        if let Some(token) = single_token(n.unwrap()) {
+            tokens.push(token);
+            continue;
+        }
+
         match n.unwrap() {
             i @ 'a'...'z' => {
                 let mut name = String::new();
@@ -96,42 +121,6 @@ pub fn scan(source: &str) -> Result<Vec<Token>, String> {
                 }
                 _ => Token::Greater
             }),
-
-            '+' => {
-                tokens.push(Token::Plus);
-            }
-
-            '*' => {
-                tokens.push(Token::Star);
-            }
-
-            '-' => {
-                tokens.push(Token::Minus);
-            }
-
-            '(' => {
-                tokens.push(Token::OpenParen);
-            }
-
-            ')' => {
-                tokens.push(Token::CloseParen);
-            }
-
-            '{' => {
-                tokens.push(Token::OpenBrace);
-            }
-
-            '}' => {
-                tokens.push(Token::CloseBrace);
-            }
-
-            ',' => {
-                tokens.push(Token::Comma);
-            }
-
-            ';' => {
-                tokens.push(Token::Semicolon);
-            }
 
             ' ' | '\n' => {
                 // Ignore whitespace

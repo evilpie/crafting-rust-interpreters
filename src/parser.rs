@@ -26,9 +26,11 @@ pub enum Expr {
     Minus(Box<Expr>, Box<Expr>),
     Multiply(Box<Expr>, Box<Expr>),
     Call(Box<Expr>, Vec<Box<Expr>>),
-    Assign(String, Box<Expr>),
-    Number(i32),
+    Array(Vec<Box<Expr>>),
     Identifier(String),
+    Assign(String, Box<Expr>),
+    Get(Box<Expr>, Box<Expr>),
+    Number(i32),
     Boolean(bool),
 }
 
@@ -361,29 +363,44 @@ impl Parser {
         loop {
             match self.current() {
                 Some(Token::OpenParen) => expr = self.finish_call(expr)?,
+                Some(Token::OpenBracket) => {
+                    self.advance();
+
+                    let key = self.expression()?;
+
+                    match self.advance() {
+                        Some(Token::CloseBracket) => {
+                            expr = Expr::Get(Box::new(expr), Box::new(key))
+                        }
+                        _ => return Err("expecting ] after index".to_string())
+                    }
+                }
                 _ => return Ok(expr)
             }
         }
     }
 
+    fn expression_list(&mut self) -> Result<Vec<Box<Expr>>, String> {
+        let mut list = Vec::new();
+        loop {
+            let expr = self.expression()?;
+            list.push(Box::new(expr));
+
+            match self.current() {
+                Some(Token::Comma) => self.advance(),
+                _ => break
+            };
+        }
+        Ok(list)
+    }
+
     fn finish_call(&mut self, expr: Expr) -> Result<Expr, String> {
         self.advance(); // (
 
-        let mut arguments: Vec<Box<Expr>> = Vec::new();
-        match self.current() {
-            Some(Token::CloseParen) => {},
-            _ => loop {
-                let expr = self.expression()?;
-                arguments.push(Box::new(expr));
-
-                match self.current() {
-                    Some(Token::Comma) => {
-                        self.advance();
-                    }
-                    _ => break
-                }
-            }
-        }
+        let arguments = match self.current() {
+            Some(Token::CloseParen) => Vec::new(),
+            _ => self.expression_list()?
+        };
 
         match self.advance() {
             Some(Token::CloseParen) => Ok(Expr::Call(Box::new(expr), arguments)),
@@ -397,7 +414,17 @@ impl Parser {
             Some(Token::Number(n)) => Ok(Expr::Number(*n)),
             Some(Token::True) => Ok(Expr::Boolean(true)),
             Some(Token::False) => Ok(Expr::Boolean(false)),
+            Some(Token::OpenBracket) => self.array(),
             t @ _ => Err(format!("Unexpected {:?}", t)),
+        }
+    }
+
+    fn array(&mut self) -> Result<Expr, String> {
+        let values = self.expression_list()?;
+
+        match self.advance() {
+            Some(Token::CloseBracket) => Ok(Expr::Array(values)),
+            _ => Err("expecting ] after array literal".to_string())
         }
     }
 }
