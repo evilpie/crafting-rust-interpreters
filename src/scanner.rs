@@ -8,6 +8,7 @@ pub enum Token {
     Plus,
     Minus,
     Star,
+    Dot,
     Comma,
     Semicolon,
     OpenParen, // (
@@ -40,6 +41,7 @@ fn single_token(ch: char) -> Option<Token> {
         ']' => Some(Token::CloseBracket),
         '{' => Some(Token::OpenBrace),
         '}' => Some(Token::CloseBrace),
+        '.' => Some(Token::Dot),
         ',' => Some(Token::Comma),
         ';' => Some(Token::Semicolon),
         _ => None

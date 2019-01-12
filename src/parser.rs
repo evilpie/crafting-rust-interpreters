@@ -375,6 +375,16 @@ impl Parser {
                         }
                         _ => return Err("expecting ] after index".to_string())
                     }
+                },
+                Some(Token::Dot) => {
+                    self.advance();
+
+                    match self.advance() {
+                        Some(Token::Identifier(name)) => {
+                            expr = Expr::Get(Box::new(expr), Box::new(Expr::String(name.clone())))
+                        },
+                        _ => return Err("expecting indentifier after dot".to_string())
+                    }
                 }
                 _ => return Ok(expr)
             }
