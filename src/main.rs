@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io;
+use std::env;
 use std::io::prelude::*;
 use std::rc::Rc;
 use std::cell::RefCell;
@@ -18,7 +19,11 @@ fn println(args: Vec<Value>) -> Value {
 }
 
 fn main() -> io::Result<()> {
-    let mut f = File::open("test.txt")?;
+    let name = match env::args().nth(1) {
+        Some(name) => name,
+        _ => panic!("missing file argument")
+    };
+    let mut f = File::open(name)?;
 
     let mut buffer = String::new();
     f.read_to_string(&mut buffer)?;
