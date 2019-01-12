@@ -230,7 +230,10 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
             match (base, key) {
                 (Value::Array(ref array), Value::Number(n)) if n >= 0 => {
                     Ok(array.borrow().get(n as usize).unwrap_or(&Value::Nothing).clone())
-                },
+                }
+                (Value::Array(ref array), Value::String(ref string)) if string == "length" => {
+                    Ok(Value::Number(array.borrow().len() as i32))
+                }
                 _ => err("can only use array with number index for now")
             }
         }
