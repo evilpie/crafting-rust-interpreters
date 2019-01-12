@@ -3,6 +3,8 @@ pub enum Token {
     Assign,
     Eq,
     Ne,
+    Greater,
+    GreaterEqual,
     Plus,
     Minus,
     Star,
@@ -85,6 +87,14 @@ pub fn scan(source: &str) -> Result<Vec<Token>, String> {
                     Token::Eq
                 }
                 _ => Token::Assign,
+            }),
+
+            '>' => tokens.push(match iter.peek() {
+                Some('=') => {
+                    iter.next();
+                    Token::GreaterEqual
+                }
+                _ => Token::Greater
             }),
 
             '+' => {

@@ -20,6 +20,8 @@ pub enum Node {
 pub enum Expr {
     Eq(Box<Expr>, Box<Expr>),
     Ne(Box<Expr>, Box<Expr>),
+    Greater(Box<Expr>, Box<Expr>),
+    GreaterEqual(Box<Expr>, Box<Expr>),
     Plus(Box<Expr>, Box<Expr>),
     Minus(Box<Expr>, Box<Expr>),
     Multiply(Box<Expr>, Box<Expr>),
@@ -260,21 +262,43 @@ impl Parser {
     }
 
     fn equality(&mut self) -> Result<Expr, String> {
-        let mut left = self.addition()?;
+        let mut left = self.comparison()?;
 
         loop {
             match self.current() {
                 Some(Token::Eq) => {
                     self.advance();
 
-                    let right = self.addition()?;
+                    let right = self.comparison()?;
                     left = Expr::Eq(Box::new(left), Box::new(right))
                 }
                 Some(Token::Ne) => {
                     self.advance();
 
-                    let right = self.addition()?;
+                    let right = self.comparison()?;
                     left = Expr::Ne(Box::new(left), Box::new(right))
+                }
+                _ => return Ok(left),
+            }
+        }
+    }
+
+    fn comparison(&mut self) -> Result<Expr, String> {
+        let mut left = self.addition()?;
+
+        loop {
+            match self.current() {
+                Some(Token::Greater) => {
+                    self.advance();
+
+                    let right = self.addition()?;
+                    left = Expr::Greater(Box::new(left), Box::new(right))
+                }
+                Some(Token::GreaterEqual) => {
+                    self.advance();
+
+                    let right = self.addition()?;
+                    left = Expr::GreaterEqual(Box::new(left), Box::new(right))
                 }
                 _ => return Ok(left),
             }

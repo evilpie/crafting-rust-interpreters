@@ -133,6 +133,22 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
                 _ => err("Unexpected Ne operands"),
             }
         }
+        Expr::Greater(ref l, ref r) => {
+            let left = execute_expr(&l, env)?;
+            let right = execute_expr(&r, env)?;
+            match (left, right) {
+                (Value::Number(a), Value::Number(b)) => Ok(Value::Boolean(a > b)),
+                _ => err("Unexpected Ne operands"),
+            }
+        }
+        Expr::GreaterEqual(ref l, ref r) => {
+            let left = execute_expr(&l, env)?;
+            let right = execute_expr(&r, env)?;
+            match (left, right) {
+                (Value::Number(a), Value::Number(b)) => Ok(Value::Boolean(a >= b)),
+                _ => err("Unexpected Ne operands"),
+            }
+        }
         Expr::Plus(ref l, ref r) => {
             let left = execute_expr(&l, env)?;
             let right = execute_expr(&r, env)?;
