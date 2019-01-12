@@ -9,6 +9,7 @@ pub struct Parser {
 pub enum Node {
     Print(Box<Expr>),
     Fun(String, Vec<String>, Box<Node>),
+    Return(Box<Expr>),
     While(Box<Expr>, Box<Node>),
     If(Box<Expr>, Box<Node>, Box<Node>),
     ExpressionStatement(Box<Expr>),
@@ -64,17 +65,19 @@ impl Parser {
         enum SType {
             Print,
             Fun,
+            Return,
             While,
             If,
             Block,
             ExpressionStatement,
         }
 
-        // This is a hack to pacify the borrow checker.
+        // ToDo: This is a hack to pacify the borrow checker.
         // I am open to suggestions!
         let stype = match self.current() {
             Some(Token::Print) => SType::Print,
             Some(Token::Fun) => SType::Fun,
+            Some(Token::Return) => SType::Return,
             Some(Token::While) => SType::While,
             Some(Token::If) => SType::If,
             Some(Token::OpenBrace) => SType::Block,
@@ -84,6 +87,7 @@ impl Parser {
         match stype {
             SType::Print => self.print_statement(),
             SType::Fun => self.fun_statement(),
+            SType::Return => self.return_statement(),
             SType::While => self.while_statement(),
             SType::If => self.if_statement(),
             SType::Block => self.block(),
@@ -141,6 +145,18 @@ impl Parser {
         let block = self.block()?;
         Ok(Node::Fun(name, parameters, Box::new(block)))
     }
+
+    fn return_statement(&mut self) -> Result<Node, String> {
+        self.advance();
+
+        let expr = self.expression()?;
+        match self.advance() {
+            Some(Token::Semicolon) => {}
+            _ => return Err("Expected semicolon after return".to_string()),
+        }
+        Ok(Node::Return(Box::new(expr)))
+    }
+
 
     fn while_statement(&mut self) -> Result<Node, String> {
         self.advance();

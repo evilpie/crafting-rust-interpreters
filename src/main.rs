@@ -14,7 +14,7 @@ use crate::scanner::scan;
 
 fn println(args: Vec<Value>) -> Value {
     println!("{:?}", args);
-    return Value::Number(42)
+    Value::Nothing
 }
 
 fn main() -> io::Result<()> {
@@ -33,7 +33,7 @@ fn main() -> io::Result<()> {
     if node.is_ok() {
         let env = Rc::new(RefCell::new(Environment::new()));
         env.borrow_mut().set("println".to_string(), Value::NativeFunction(println));
-        execute_node(&Box::new(node.unwrap()), &env);
+        println!("result: {:?}", execute_node(&Box::new(node.unwrap()), &env));
     }
 
     // and more! See the other methods for more details.

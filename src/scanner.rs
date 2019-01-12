@@ -16,6 +16,7 @@ pub enum Token {
     Identifier(String),
     Print,
     Fun,
+    Return,
     While,
     If,
     Else,
@@ -46,6 +47,7 @@ pub fn scan(source: &str) -> Result<Vec<Token>, String> {
                 tokens.push(match name.as_str() {
                     "print" => Token::Print,
                     "fun" => Token::Fun,
+                    "return" => Token::Return,
                     "while" => Token::While,
                     "if" => Token::If,
                     "else" => Token::Else,
