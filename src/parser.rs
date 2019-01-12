@@ -31,6 +31,7 @@ pub enum Expr {
     Assign(String, Box<Expr>),
     Get(Box<Expr>, Box<Expr>),
     Number(i32),
+    String(String),
     Boolean(bool),
 }
 
@@ -412,6 +413,7 @@ impl Parser {
         match self.advance() {
             Some(Token::Identifier(name)) => Ok(Expr::Identifier(name.clone())),
             Some(Token::Number(n)) => Ok(Expr::Number(*n)),
+            Some(Token::String(string)) => Ok(Expr::String(string.clone())),
             Some(Token::True) => Ok(Expr::Boolean(true)),
             Some(Token::False) => Ok(Expr::Boolean(false)),
             Some(Token::OpenBracket) => self.array(),

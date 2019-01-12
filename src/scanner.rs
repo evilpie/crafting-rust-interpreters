@@ -17,6 +17,7 @@ pub enum Token {
     OpenBrace, // {
     CloseBrace, // }
     Number(i32),
+    String(String),
     Identifier(String),
     Print,
     Fun,
@@ -96,6 +97,23 @@ pub fn scan(source: &str) -> Result<Vec<Token>, String> {
                 }
 
                 tokens.push(Token::Number(number.parse().unwrap()));
+            }
+
+            '"' => {
+                let mut string = String::new();
+
+                loop {
+                    match iter.peek() {
+                        Some('"') => {
+                            iter.next();
+                            break
+                        },
+                        Some(_) => string.push(iter.next().unwrap()),
+                        _ => break,
+                    };
+                }
+
+                tokens.push(Token::String(string));
             }
 
             '!' => tokens.push(match iter.peek() {

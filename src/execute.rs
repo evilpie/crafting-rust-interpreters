@@ -8,6 +8,7 @@ use crate::parser::{Expr, Node};
 pub enum Value {
     Nothing,
     Number(i32),
+    String(String),
     Boolean(bool),
     NativeFunction(fn(Vec<Value>) -> Value),
     Function(Vec<String>, Box<Node>, Rc<RefCell<Environment>>),
@@ -175,6 +176,7 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
             }
         }
         Expr::Number(n) => Ok(Value::Number(n)),
+        Expr::String(ref string) => Ok(Value::String(string.clone())),
         Expr::Boolean(b) => Ok(Value::Boolean(b)),
         Expr::Call(ref callee, ref arguments) => {
             match execute_expr(&callee, env)? {
