@@ -140,7 +140,7 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
             let right = execute_expr(&r, env)?;
             match (left, right) {
                 (Value::Number(a), Value::Number(b)) => Ok(Value::Boolean(a > b)),
-                _ => err("Unexpected Ne operands"),
+                _ => err("Unexpected > operands"),
             }
         }
         Expr::GreaterEqual(ref l, ref r) => {
@@ -148,7 +148,23 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
             let right = execute_expr(&r, env)?;
             match (left, right) {
                 (Value::Number(a), Value::Number(b)) => Ok(Value::Boolean(a >= b)),
-                _ => err("Unexpected Ne operands"),
+                _ => err("Unexpected >= operands"),
+            }
+        }
+        Expr::Less(ref l, ref r) => {
+            let left = execute_expr(&l, env)?;
+            let right = execute_expr(&r, env)?;
+            match (left, right) {
+                (Value::Number(a), Value::Number(b)) => Ok(Value::Boolean(a < b)),
+                _ => err("Unexpected < operands"),
+            }
+        }
+        Expr::LessEqual(ref l, ref r) => {
+            let left = execute_expr(&l, env)?;
+            let right = execute_expr(&r, env)?;
+            match (left, right) {
+                (Value::Number(a), Value::Number(b)) => Ok(Value::Boolean(a <= b)),
+                _ => err("Unexpected <= operands"),
             }
         }
         Expr::Plus(ref l, ref r) => {

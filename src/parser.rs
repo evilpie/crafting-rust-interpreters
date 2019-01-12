@@ -22,6 +22,8 @@ pub enum Expr {
     Ne(Box<Expr>, Box<Expr>),
     Greater(Box<Expr>, Box<Expr>),
     GreaterEqual(Box<Expr>, Box<Expr>),
+    Less(Box<Expr>, Box<Expr>),
+    LessEqual(Box<Expr>, Box<Expr>),
     Plus(Box<Expr>, Box<Expr>),
     Minus(Box<Expr>, Box<Expr>),
     Multiply(Box<Expr>, Box<Expr>),
@@ -302,6 +304,18 @@ impl Parser {
 
                     let right = self.addition()?;
                     left = Expr::GreaterEqual(Box::new(left), Box::new(right))
+                }
+                Some(Token::Less) => {
+                    self.advance();
+
+                    let right = self.addition()?;
+                    left = Expr::Less(Box::new(left), Box::new(right))
+                }
+                Some(Token::LessEqual) => {
+                    self.advance();
+
+                    let right = self.addition()?;
+                    left = Expr::LessEqual(Box::new(left), Box::new(right))
                 }
                 _ => return Ok(left),
             }
