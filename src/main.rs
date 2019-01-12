@@ -1,13 +1,14 @@
-use std::collections::HashMap;
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 mod execute;
 mod parser;
 mod scanner;
 
-use crate::execute::{execute_node, Value};
+use crate::execute::{execute_node, Value, Environment};
 use crate::parser::Parser;
 use crate::scanner::scan;
 
@@ -30,9 +31,9 @@ fn main() -> io::Result<()> {
     println!("{:?}", node);
 
     if node.is_ok() {
-        let mut vars = HashMap::new();
-        vars.insert("println".to_string(), Value::NativeFunction(println));
-        execute_node(&Box::new(node.unwrap()), &mut vars);
+        let env = Rc::new(RefCell::new(Environment::new()));
+        env.borrow_mut().set("println".to_string(), Value::NativeFunction(println));
+        execute_node(&Box::new(node.unwrap()), &env);
     }
 
     // and more! See the other methods for more details.

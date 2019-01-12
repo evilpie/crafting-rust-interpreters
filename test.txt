@@ -1,6 +1,11 @@
 fun test(a, b) {
-    print a;
-    print b;
+    fun bar() {
+        print a;
+    }
+
+    bar();
+    a = false;
+    bar();
 }
 
 test(true, 42);
