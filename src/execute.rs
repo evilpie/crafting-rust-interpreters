@@ -59,6 +59,10 @@ pub enum VMError {
 
 pub type VMResult = Result<Value, VMError>;
 
+fn err(msg: &str) -> VMResult {
+    Err(VMError::Message(msg.to_string()))
+}
+
 // Todo: This is probably going to require a different ownership story
 pub fn execute_node(node: &Box<Node>, env: &Rc<RefCell<Environment>>) -> VMResult {
     match **node {
@@ -86,8 +90,9 @@ pub fn execute_node(node: &Box<Node>, env: &Rc<RefCell<Environment>>) -> VMResul
         }
 
         Node::Print(ref expr) => {
-            println!("print: {:?}", execute_expr(&expr, env));
-            Ok(Value::Nothing)
+            let expr = execute_expr(&expr, env)?;
+            println!("print: {:?}", expr);
+            Ok(expr)
         }
 
         Node::While(ref condition, ref block) => {
@@ -95,7 +100,7 @@ pub fn execute_node(node: &Box<Node>, env: &Rc<RefCell<Environment>>) -> VMResul
                 match execute_expr(&condition, env)? {
                     Value::Boolean(true) => execute_node(&block, env)?,
                     Value::Boolean(false) => break,
-                    _ => panic!("while expects boolean operand"),
+                    _ => return err("while expects boolean operand"),
                 };
             }
 
@@ -105,7 +110,7 @@ pub fn execute_node(node: &Box<Node>, env: &Rc<RefCell<Environment>>) -> VMResul
         Node::If(ref condition, ref then, ref other) => match execute_expr(&condition, env)? {
             Value::Boolean(true) => execute_node(&then, env),
             Value::Boolean(false) => execute_node(&other, env),
-            _ => panic!("if expects boolean operand"),
+            _ => err("if expects boolean operand"),
         },
     }
 }
@@ -117,7 +122,7 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
             let right = execute_expr(&r, env)?;
             match (left, right) {
                 (Value::Number(a), Value::Number(b)) => Ok(Value::Boolean(a == b)),
-                _ => panic!("Unexpected Eq operands"),
+                _ => err("Unexpected Eq operands"),
             }
         }
         Expr::Ne(ref l, ref r) => {
@@ -125,7 +130,7 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
             let right = execute_expr(&r, env)?;
             match (left, right) {
                 (Value::Number(a), Value::Number(b)) => Ok(Value::Boolean(a != b)),
-                _ => panic!("Unexpected Ne operands"),
+                _ => err("Unexpected Ne operands"),
             }
         }
         Expr::Plus(ref l, ref r) => {
@@ -133,7 +138,7 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
             let right = execute_expr(&r, env)?;
             match (left, right) {
                 (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a + b)),
-                _ => panic!("Unexpected Plus operands"),
+                _ => err("Unexpected Plus operands"),
             }
         }
         Expr::Minus(ref l, ref r) => {
@@ -141,7 +146,7 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
             let right = execute_expr(&r, env)?;
             match (left, right) {
                 (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a - b)),
-                _ => panic!("Unexpected Minus operands"),
+                _ => err("Unexpected Minus operands"),
             }
         }
         Expr::Multiply(ref l, ref r) => {
@@ -149,7 +154,7 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
             let right = execute_expr(&r, env)?;
             match (left, right) {
                 (Value::Number(a), Value::Number(b)) => Ok(Value::Number(a * b)),
-                _ => panic!("Unexpected Multiply operands"),
+                _ => err("Unexpected Multiply operands"),
             }
         }
         Expr::Number(n) => Ok(Value::Number(n)),
@@ -157,20 +162,20 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
         Expr::Call(ref callee, ref arguments) => {
             match execute_expr(&callee, env)? {
                 Value::NativeFunction(fun) => {
-                    let args = arguments.iter().map(|arg| {
-                        execute_expr(&arg, env).unwrap() // ToDo: nice API for this?
+                    let args: Result<Vec<Value>, _> = arguments.iter().map(|arg| {
+                        execute_expr(&arg, env)
                     }).collect();
 
-                    Ok(fun(args))
+                    Ok(fun(args?))
                 },
                 Value::Function(parameters, body, scope) => {
-                    let args = arguments.iter().map(|arg| {
-                        execute_expr(&arg, env).unwrap()
-                    });
+                    let args: Result<Vec<Value>, _> = arguments.iter().map(|arg| {
+                        execute_expr(&arg, env)
+                    }).collect();
 
                     // ToDo: argument count != paramter count
                     let local = Rc::new(RefCell::new(Environment::new_enclosing(scope)));
-                    for (name, arg) in parameters.iter().zip(args) {
+                    for (name, arg) in parameters.iter().zip(args?) {
                         local.borrow_mut().set(name.clone(), arg);
                     }
 
@@ -180,7 +185,7 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
                         Ok(_) => Ok(Value::Nothing) // No implicit return!
                     }
                 }
-                _ => panic!("expected function callee")
+                _ => err("expected function callee")
             }
         }
         Expr::Assign(ref name, ref expr) => {
@@ -190,7 +195,7 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
         }
         Expr::Identifier(ref name) => match env.borrow().get(name) {
             Some(v) => Ok(v.clone()),
-            None => panic!("no such variable '{}'", name),
+            None => Err(VMError::Message(format!("no such variable '{}'", name))),
         }
     }
 }
