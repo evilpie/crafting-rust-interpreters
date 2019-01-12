@@ -332,11 +332,13 @@ impl Parser {
     }
 
     fn call(&mut self) -> Result<Expr, String> {
-        let expr = self.primary()?;
+        let mut expr = self.primary()?;
 
-        match self.current() {
-            Some(Token::OpenParen) => self.finish_call(expr),
-            _ => Ok(expr)
+        loop {
+            match self.current() {
+                Some(Token::OpenParen) => expr = self.finish_call(expr)?,
+                _ => return Ok(expr)
+            }
         }
     }
 
