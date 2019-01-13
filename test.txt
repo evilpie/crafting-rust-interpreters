@@ -23,7 +23,7 @@ fun fib(n) {
 
 print fib(8);
 
-a = 10;
+var a = 10;
 while (a != 0) {
     print a;
     a = a - 1;
