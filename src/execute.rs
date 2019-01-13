@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::fmt;
 
 use crate::parser::{Expr, Node};
 
@@ -13,6 +14,26 @@ pub enum Value {
     NativeFunction(fn(Vec<Value>) -> Value),
     Function(Vec<String>, Box<Node>, Rc<RefCell<Environment>>),
     Array(Rc<RefCell<Vec<Value>>>),
+}
+
+impl fmt::Display for Value {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Value::Nothing => write!(f, "<nothing>"),
+            Value::Number(n) => write!(f, "<number: {}>", n),
+            Value::String(ref string) => write!(f, "<string: {}>", string),
+            Value::Boolean(b) => write!(f, "<boolean: {}>", b),
+            Value::NativeFunction(_) => write!(f, "<native function>"),
+            Value::Function(_, _, _) => write!(f, "<function>"),
+            Value::Array(ref array) => write!(f, "<array: {}>", array.borrow().len()),
+        }
+    }
+}
+
+impl Drop for Value {
+    fn drop(&mut self) {
+        // println!("dropping {}", self);
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -219,20 +240,20 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
         Expr::Boolean(b) => Ok(Value::Boolean(b)),
         Expr::Call(ref callee, ref arguments) => {
             match execute_expr(&callee, env)? {
-                Value::NativeFunction(fun) => {
+                Value::NativeFunction(ref fun) => {
                     let args: Result<Vec<Value>, _> = arguments.iter().map(|arg| {
                         execute_expr(&arg, env)
                     }).collect();
 
                     Ok(fun(args?))
                 },
-                Value::Function(parameters, body, scope) => {
+                Value::Function(ref parameters, ref body, ref scope) => {
                     let args: Result<Vec<Value>, _> = arguments.iter().map(|arg| {
                         execute_expr(&arg, env)
                     }).collect();
 
                     // ToDo: argument count != paramter count
-                    let local = Rc::new(RefCell::new(Environment::new_enclosing(scope)));
+                    let local = Rc::new(RefCell::new(Environment::new_enclosing(scope.clone())));
                     for (name, arg) in parameters.iter().zip(args?) {
                         local.borrow_mut().set(name.clone(), arg);
                     }

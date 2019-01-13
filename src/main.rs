@@ -38,7 +38,10 @@ fn main() -> io::Result<()> {
     if node.is_ok() {
         let env = Rc::new(RefCell::new(Environment::new()));
         env.borrow_mut().set("println".to_string(), Value::NativeFunction(println));
-        println!("result: {:?}", execute_node(&Box::new(node.unwrap()), &env));
+        match execute_node(&Box::new(node.unwrap()), &env) {
+            Ok(v) => println!("ok: {}", v),
+            Err(e) => println!("error: {:?}", e)
+        }
     }
 
     // and more! See the other methods for more details.
