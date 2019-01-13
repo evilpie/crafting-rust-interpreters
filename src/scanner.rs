@@ -66,13 +66,15 @@ pub fn scan(source: &str) -> Result<Vec<Token>, String> {
         }
 
         match n.unwrap() {
-            i @ 'a'...'z' => {
+            i @ 'a'...'z' | i @ 'A'...'Z' => {
                 let mut name = String::new();
                 name.push(i);
 
                 loop {
                     match iter.peek() {
-                        Some('a'...'z') => name.push(iter.next().unwrap()),
+                        Some('a'...'z') |
+                        Some('A'...'Z') |
+                        Some('_') => name.push(iter.next().unwrap()),
                         _ => break,
                     };
                 }
