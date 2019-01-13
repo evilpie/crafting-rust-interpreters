@@ -32,6 +32,7 @@ pub enum Expr {
     Identifier(String),
     Assign(String, Box<Expr>),
     Get(Box<Expr>, Box<Expr>),
+    Set(Box<Expr>, Box<Expr>, Box<Expr>),
     Number(i32),
     String(String),
     Boolean(bool),
@@ -292,6 +293,7 @@ impl Parser {
                 let right = self.assignment()?;
                 match left {
                     Expr::Identifier(name) => Ok(Expr::Assign(name.clone(), Box::new(right))),
+                    Expr::Get(base, key) => Ok(Expr::Set(base, key, Box::new(right))),
                     _ => Err("Unexpected left hand side of assignment".to_string()),
                 }
             }

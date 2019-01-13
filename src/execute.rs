@@ -253,5 +253,22 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
                 _ => err("can only use array with number index for now")
             }
         }
+        Expr::Set(ref b, ref k, ref v) => {
+            let base = execute_expr(b, env)?;
+            let key = execute_expr(k, env)?;
+            let value = execute_expr(v, env)?;
+
+            match (base, key) {
+                (Value::Array(ref array), Value::Number(n)) if n >= 0 => {
+                    match array.borrow_mut().get_mut(n as usize) {
+                        Some(elem) => *elem = value.clone(),
+                        _ => return err("array index of range")
+                    }
+                }
+                _ => return err("array only")
+            }
+
+            Ok(value)
+        }
     }
 }
