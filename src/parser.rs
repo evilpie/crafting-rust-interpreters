@@ -207,6 +207,7 @@ impl Parser {
                 self.advance();
                 None
             }
+            Some(Token::Var) => Some(self.var_declaration()?),
             _ => Some(self.expression_statement()?)
         };
 
@@ -235,7 +236,7 @@ impl Parser {
         // Desugaring
 
         if let Some(update) = update {
-            body = Node::Statements(vec![
+            body = Node::Block(vec![
                 Box::new(body),
                 Box::new(Node::ExpressionStatement(Box::new(update)))]);
         }
@@ -243,7 +244,7 @@ impl Parser {
         let while_loop = Node::While(Box::new(condition), Box::new(body));
 
         Ok(match init {
-            Some(init) => Node::Statements(vec![Box::new(init), Box::new(while_loop)]),
+            Some(init) => Node::Block(vec![Box::new(init), Box::new(while_loop)]),
             _ => while_loop
         })
     }
