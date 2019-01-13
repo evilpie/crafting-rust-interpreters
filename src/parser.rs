@@ -69,39 +69,15 @@ impl Parser {
     }
 
     fn statement(&mut self) -> Result<Node, String> {
-        enum SType {
-            Print,
-            Fun,
-            Return,
-            While,
-            For,
-            If,
-            Block,
-            ExpressionStatement,
-        }
-
-        // ToDo: This is a hack to pacify the borrow checker.
-        // I am open to suggestions!
-        let stype = match self.current() {
-            Some(Token::Print) => SType::Print,
-            Some(Token::Fun) => SType::Fun,
-            Some(Token::Return) => SType::Return,
-            Some(Token::While) => SType::While,
-            Some(Token::For) => SType::For,
-            Some(Token::If) => SType::If,
-            Some(Token::OpenBrace) => SType::Block,
-            _ => SType::ExpressionStatement,
-        };
-
-        match stype {
-            SType::Print => self.print_statement(),
-            SType::Fun => self.fun_statement(),
-            SType::Return => self.return_statement(),
-            SType::While => self.while_statement(),
-            SType::For => self.for_statement(),
-            SType::If => self.if_statement(),
-            SType::Block => self.block(),
-            SType::ExpressionStatement => self.expression_statement(),
+        match self.current() {
+            Some(Token::Print) => self.print_statement(),
+            Some(Token::Fun) => self.fun_statement(),
+            Some(Token::Return) => self.return_statement(),
+            Some(Token::While) => self.while_statement(),
+            Some(Token::For) => self.for_statement(),
+            Some(Token::If) => self.if_statement(),
+            Some(Token::OpenBrace) => self.block(),
+            _ => self.expression_statement(),
         }
     }
 
