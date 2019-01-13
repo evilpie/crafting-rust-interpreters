@@ -18,7 +18,7 @@ use crate::parser::Parser;
 use crate::scanner::scan;
 
 fn println(_base: Option<Value>, args: Vec<Value>) -> Value {
-    println!("{:?}", args);
+    println!("println: {:?}", args);
     Value::Nothing
 }
 

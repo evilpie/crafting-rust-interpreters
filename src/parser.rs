@@ -71,6 +71,7 @@ impl Parser {
     fn declaration(&mut self) -> Result<Node, String> {
         match self.current() {
             Some(Token::Var) => self.var_declaration(),
+            Some(Token::Fun) => self.fun_declaration(),
             _ => self.statement()
         }
     }
@@ -99,31 +100,7 @@ impl Parser {
         Ok(Node::Var(name, init))
     }
 
-    fn statement(&mut self) -> Result<Node, String> {
-        match self.current() {
-            Some(Token::Print) => self.print_statement(),
-            Some(Token::Fun) => self.fun_statement(),
-            Some(Token::Return) => self.return_statement(),
-            Some(Token::While) => self.while_statement(),
-            Some(Token::For) => self.for_statement(),
-            Some(Token::If) => self.if_statement(),
-            Some(Token::OpenBrace) => self.block(),
-            _ => self.expression_statement(),
-        }
-    }
-
-    fn print_statement(&mut self) -> Result<Node, String> {
-        self.advance();
-
-        let expr = self.expression()?;
-        match self.advance() {
-            Some(Token::Semicolon) => {}
-            _ => return Err("Expected semicolon after print".to_string()),
-        }
-        Ok(Node::Print(Box::new(expr)))
-    }
-
-    fn fun_statement(&mut self) -> Result<Node, String> {
+    fn fun_declaration(&mut self) -> Result<Node, String> {
         self.advance();
 
         let name = match self.advance() {
@@ -161,6 +138,29 @@ impl Parser {
 
         let block = self.block()?;
         Ok(Node::Fun(name, parameters, Box::new(block)))
+    }
+
+    fn statement(&mut self) -> Result<Node, String> {
+        match self.current() {
+            Some(Token::Print) => self.print_statement(),
+            Some(Token::Return) => self.return_statement(),
+            Some(Token::While) => self.while_statement(),
+            Some(Token::For) => self.for_statement(),
+            Some(Token::If) => self.if_statement(),
+            Some(Token::OpenBrace) => self.block(),
+            _ => self.expression_statement(),
+        }
+    }
+
+    fn print_statement(&mut self) -> Result<Node, String> {
+        self.advance();
+
+        let expr = self.expression()?;
+        match self.advance() {
+            Some(Token::Semicolon) => {}
+            _ => return Err("Expected semicolon after print".to_string()),
+        }
+        Ok(Node::Print(Box::new(expr)))
     }
 
     fn return_statement(&mut self) -> Result<Node, String> {
