@@ -74,6 +74,7 @@ impl Parser {
             Fun,
             Return,
             While,
+            For,
             If,
             Block,
             ExpressionStatement,
@@ -86,6 +87,7 @@ impl Parser {
             Some(Token::Fun) => SType::Fun,
             Some(Token::Return) => SType::Return,
             Some(Token::While) => SType::While,
+            Some(Token::For) => SType::For,
             Some(Token::If) => SType::If,
             Some(Token::OpenBrace) => SType::Block,
             _ => SType::ExpressionStatement,
@@ -96,6 +98,7 @@ impl Parser {
             SType::Fun => self.fun_statement(),
             SType::Return => self.return_statement(),
             SType::While => self.while_statement(),
+            SType::For => self.for_statement(),
             SType::If => self.if_statement(),
             SType::Block => self.block(),
             SType::ExpressionStatement => self.expression_statement(),
@@ -182,6 +185,60 @@ impl Parser {
 
         let block = self.block()?;
         Ok(Node::While(Box::new(condition), Box::new(block)))
+    }
+
+    fn for_statement(&mut self) -> Result<Node, String> {
+        self.advance();
+
+        match self.advance() {
+            Some(Token::OpenParen) => {}
+            _ => return Err("expected open parens ( after for".to_string()),
+        }
+
+        let init = match self.current() {
+            Some(Token::Semicolon) => {
+                self.advance();
+                None
+            }
+            _ => Some(self.expression_statement()?)
+        };
+
+        let condition = match self.current() {
+            Some(Token::Semicolon) => Expr::Boolean(true),
+            _ => self.expression()?
+        };
+
+        match self.advance() {
+            Some(Token::Semicolon) => {}
+            _ => return Err("expected semicolon after condition".to_string()),
+        }
+
+        let update = match self.current() {
+            Some(Token::CloseParen) => None,
+            _ => Some(self.expression()?)
+        };
+
+        match self.advance() {
+            Some(Token::CloseParen) => {}
+            _ => return Err("expected ) after for".to_string()),
+        }
+
+        let mut body = self.block()?;
+
+        // Desugaring
+
+        if let Some(update) = update {
+            body = Node::Statements(vec![
+                Box::new(body),
+                Box::new(Node::ExpressionStatement(Box::new(update)))]);
+        }
+
+        let while_loop = Node::While(Box::new(condition), Box::new(body));
+
+        Ok(match init {
+            Some(init) => Node::Statements(vec![Box::new(init), Box::new(while_loop)]),
+            _ => while_loop
+        })
     }
 
     fn if_statement(&mut self) -> Result<Node, String> {
