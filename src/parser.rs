@@ -15,6 +15,7 @@ pub enum Node {
     If(Box<Expr>, Box<Node>, Box<Node>),
     ExpressionStatement(Box<Expr>),
     Statements(Vec<Box<Node>>),
+    Block(Vec<Box<Node>>),
 }
 
 #[derive(Debug, Clone)]
@@ -294,9 +295,9 @@ impl Parser {
                 None => return Err("missing closing brace }".to_string()),
             }
 
-            statements.push(Box::new(self.statement()?));
+            statements.push(Box::new(self.declaration()?));
         }
-        Ok(Node::Statements(statements))
+        Ok(Node::Block(statements))
     }
 
     fn expression_statement(&mut self) -> Result<Node, String> {

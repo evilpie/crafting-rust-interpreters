@@ -96,6 +96,15 @@ pub fn execute_node(node: &Box<Node>, env: &Rc<RefCell<Environment>>) -> VMResul
             execute_expr(&expr, env)
         }
 
+        Node::Block(ref statements) => {
+            let block_scope = Rc::new(RefCell::new(Environment::new_enclosing(env.clone())));
+            let mut last = Value::Nothing;
+            for node in statements {
+                last = execute_node(&node, &block_scope)?;
+            }
+            Ok(last)
+        }
+
         Node::Var(ref name, ref init) => {
             let value = match init {
                 Some(ref expr) => execute_expr(expr, env)?,
