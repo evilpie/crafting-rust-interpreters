@@ -481,7 +481,10 @@ impl Parser {
     }
 
     fn array(&mut self) -> Result<Expr, String> {
-        let values = self.expression_list()?;
+        let values = match self.current() {
+            Some(Token::CloseBracket) => Vec::new(),
+            _ => self.expression_list()?
+        };
 
         match self.advance() {
             Some(Token::CloseBracket) => Ok(Expr::Array(values)),
