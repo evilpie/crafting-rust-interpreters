@@ -65,6 +65,29 @@ fn err(msg: &str) -> VMResult {
     Err(VMError::Message(msg.to_string()))
 }
 
+fn get(base: Value, key: Value) -> VMResult {
+    if let Value::Array(ref array) = base {
+        match key {
+            Value::Number(n) => {
+                if n < 0 {
+                    return err("negative array index");
+                }
+
+                match array.borrow().get(n as usize) {
+                    Some(v) => Ok(v.clone()),
+                    _ => err("array index of range")
+                }
+            }
+            Value::String(ref string) if string == "length" => {
+                Ok(Value::Number(array.borrow().len() as i32))
+            }
+            _ => err("invalid key")
+        }
+    } else {
+        err("invalid base")
+    }
+}
+
 // Todo: This is probably going to require a different ownership story
 pub fn execute_node(node: &Box<Node>, env: &Rc<RefCell<Environment>>) -> VMResult {
     match **node {
@@ -243,15 +266,7 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
             let base = execute_expr(b, env)?;
             let key = execute_expr(k, env)?;
 
-            match (base, key) {
-                (Value::Array(ref array), Value::Number(n)) if n >= 0 => {
-                    Ok(array.borrow().get(n as usize).unwrap_or(&Value::Nothing).clone())
-                }
-                (Value::Array(ref array), Value::String(ref string)) if string == "length" => {
-                    Ok(Value::Number(array.borrow().len() as i32))
-                }
-                _ => err("can only use array with number index for now")
-            }
+            get(base, key)
         }
         Expr::Set(ref b, ref k, ref v) => {
             let base = execute_expr(b, env)?;
