@@ -6,10 +6,14 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 mod execute;
+mod environment;
 mod parser;
 mod scanner;
+mod value;
 
-use crate::execute::{execute_node, Value, Environment};
+use crate::execute::execute_node;
+use crate::environment::Environment;
+use crate::value::Value;
 use crate::parser::Parser;
 use crate::scanner::scan;
 
