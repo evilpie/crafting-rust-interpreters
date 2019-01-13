@@ -17,6 +17,14 @@ fn err(msg: &str) -> VMResult {
     Err(VMError::Message(msg.to_string()))
 }
 
+fn array_push(base: Option<Value>, args: Vec<Value>) -> Value {
+    if let Some(Value::Array(ref array)) = base {
+        array.borrow_mut().extend(args)
+    }
+
+    Value::Nothing
+}
+
 fn get(base: Value, key: Value) -> VMResult {
     if let Value::Array(ref array) = base {
         match key {
@@ -33,10 +41,43 @@ fn get(base: Value, key: Value) -> VMResult {
             Value::String(ref string) if string == "length" => {
                 Ok(Value::Number(array.borrow().len() as i32))
             }
+            Value::String(ref string) if string == "push" => {
+                Ok(Value::NativeFunction(array_push))
+            }
             _ => err("invalid key")
         }
     } else {
         err("invalid base")
+    }
+}
+
+fn call(callee: Value, base: Option<Value>, arguments: &Vec<Box<Expr>>, env: &Rc<RefCell<Environment>>) -> VMResult {
+    match callee {
+        Value::NativeFunction(ref fun) => {
+            let args: Result<Vec<Value>, _> = arguments.iter().map(|arg| {
+                execute_expr(&arg, env)
+            }).collect();
+
+            Ok(fun(base, args?))
+        },
+        Value::Function(ref parameters, ref body, ref scope) => {
+            let args: Result<Vec<Value>, _> = arguments.iter().map(|arg| {
+                execute_expr(&arg, env)
+            }).collect();
+
+            // ToDo: argument count != paramter count
+            let local = Rc::new(RefCell::new(Environment::new_enclosing(scope.clone())));
+            for (name, arg) in parameters.iter().zip(args?) {
+                local.borrow_mut().set(name.clone(), arg);
+            }
+
+            match execute_node(&body, &local) {
+                Err(VMError::Return(v)) => Ok(v.clone()),
+                e @ Err(_) => e,
+                Ok(_) => Ok(Value::Nothing) // No implicit return!
+            }
+        }
+        _ => err("expected function callee")
     }
 }
 
@@ -169,34 +210,16 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
         Expr::Number(n) => Ok(Value::Number(n)),
         Expr::String(ref string) => Ok(Value::String(string.clone())),
         Expr::Boolean(b) => Ok(Value::Boolean(b)),
-        Expr::Call(ref callee, ref arguments) => {
-            match execute_expr(&callee, env)? {
-                Value::NativeFunction(ref fun) => {
-                    let args: Result<Vec<Value>, _> = arguments.iter().map(|arg| {
-                        execute_expr(&arg, env)
-                    }).collect();
+        Expr::Call(ref c, ref arguments) => {
+            let callee = execute_expr(c, env)?;
+            call(callee, None, arguments, env)
+        }
+        Expr::MethodCall(ref b, ref k, ref arguments) => {
+            let base = execute_expr(b, env)?;
+            let key = execute_expr(k, env)?;
 
-                    Ok(fun(args?))
-                },
-                Value::Function(ref parameters, ref body, ref scope) => {
-                    let args: Result<Vec<Value>, _> = arguments.iter().map(|arg| {
-                        execute_expr(&arg, env)
-                    }).collect();
-
-                    // ToDo: argument count != paramter count
-                    let local = Rc::new(RefCell::new(Environment::new_enclosing(scope.clone())));
-                    for (name, arg) in parameters.iter().zip(args?) {
-                        local.borrow_mut().set(name.clone(), arg);
-                    }
-
-                    match execute_node(&body, &local) {
-                        Err(VMError::Return(v)) => Ok(v.clone()),
-                        e @ Err(_) => e,
-                        Ok(_) => Ok(Value::Nothing) // No implicit return!
-                    }
-                }
-                _ => err("expected function callee")
-            }
+            let callee = get(base.clone(), key)?;
+            call(callee, Some(base), arguments, env)
         }
         Expr::Array(ref values) => {
             let vals: Result<Vec<Value>, _> = values.iter().map(|arg| {

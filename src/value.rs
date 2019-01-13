@@ -11,7 +11,7 @@ pub enum Value {
     Number(i32),
     String(String),
     Boolean(bool),
-    NativeFunction(fn(Vec<Value>) -> Value),
+    NativeFunction(fn(Option<Value>, Vec<Value>) -> Value),
     Function(Vec<String>, Box<Node>, Rc<RefCell<Environment>>),
     Array(Rc<RefCell<Vec<Value>>>),
 }

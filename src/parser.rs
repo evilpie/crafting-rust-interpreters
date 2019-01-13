@@ -28,6 +28,7 @@ pub enum Expr {
     Minus(Box<Expr>, Box<Expr>),
     Multiply(Box<Expr>, Box<Expr>),
     Call(Box<Expr>, Vec<Box<Expr>>),
+    MethodCall(Box<Expr>, Box<Expr>, Vec<Box<Expr>>),
     Array(Vec<Box<Expr>>),
     Identifier(String),
     Assign(String, Box<Expr>),
@@ -463,7 +464,10 @@ impl Parser {
         };
 
         match self.advance() {
-            Some(Token::CloseParen) => Ok(Expr::Call(Box::new(expr), arguments)),
+            Some(Token::CloseParen) => Ok(match expr {
+                Expr::Get(expr, key) => Expr::MethodCall(expr, key, arguments),
+                expr @ _ => Expr::Call(Box::new(expr), arguments)
+            }),
             _ => Err("expecting ) after calle".to_string())
         }
     }
