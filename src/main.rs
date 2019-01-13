@@ -17,7 +17,7 @@ use crate::value::Value;
 use crate::parser::Parser;
 use crate::scanner::scan;
 
-fn println(base: Option<Value>, args: Vec<Value>) -> Value {
+fn println(_base: Option<Value>, args: Vec<Value>) -> Value {
     println!("{:?}", args);
     Value::Nothing
 }
@@ -41,7 +41,7 @@ fn main() -> io::Result<()> {
 
     if node.is_ok() {
         let env = Rc::new(RefCell::new(Environment::new()));
-        env.borrow_mut().set("println".to_string(), Value::NativeFunction(println));
+        env.borrow_mut().define("println".to_string(), Value::NativeFunction(println));
         match execute_node(&Box::new(node.unwrap()), &env) {
             Ok(v) => println!("ok: {}", v),
             Err(e) => println!("error: {:?}", e)

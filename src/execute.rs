@@ -68,7 +68,7 @@ fn call(callee: Value, base: Option<Value>, arguments: &Vec<Box<Expr>>, env: &Rc
             // ToDo: argument count != paramter count
             let local = Rc::new(RefCell::new(Environment::new_enclosing(scope.clone())));
             for (name, arg) in parameters.iter().zip(args?) {
-                local.borrow_mut().set(name.clone(), arg);
+                local.borrow_mut().define(name.clone(), arg);
             }
 
             match execute_node(&body, &local) {
@@ -96,9 +96,19 @@ pub fn execute_node(node: &Box<Node>, env: &Rc<RefCell<Environment>>) -> VMResul
             execute_expr(&expr, env)
         }
 
+        Node::Var(ref name, ref init) => {
+            let value = match init {
+                Some(ref expr) => execute_expr(expr, env)?,
+                None => Value::Nothing
+            };
+
+            env.borrow_mut().define(name.clone(), value.clone());
+            Ok(value)
+        }
+
         Node::Fun(ref name, ref parameters, ref body) => {
             // ToDo: This probably leaks the environment.
-            env.borrow_mut().set(name.clone(), Value::Function(parameters.clone(), body.clone(), env.clone()));
+            env.borrow_mut().define(name.clone(), Value::Function(parameters.clone(), body.clone(), env.clone()));
             Ok(Value::Nothing)
         }
 
@@ -230,13 +240,9 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
         }
         Expr::Assign(ref name, ref expr) => {
             let right = execute_expr(&expr, env)?;
-            env.borrow_mut().set(name.to_string(), right.clone());
-            Ok(right.clone())
+            env.borrow_mut().set(name.to_string(), right.clone())
         }
-        Expr::Identifier(ref name) => match env.borrow().get(name) {
-            Some(v) => Ok(v.clone()),
-            None => Err(VMError::Message(format!("no such variable '{}'", name))),
-        }
+        Expr::Identifier(ref name) => env.borrow().get(name),
         Expr::Get(ref b, ref k) => {
             let base = execute_expr(b, env)?;
             let key = execute_expr(k, env)?;

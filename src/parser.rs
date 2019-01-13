@@ -7,6 +7,7 @@ pub struct Parser {
 
 #[derive(Debug, Clone)]
 pub enum Node {
+    Var(String, Option<Box<Expr>>),
     Print(Box<Expr>),
     Fun(String, Vec<String>, Box<Node>),
     Return(Box<Expr>),
@@ -45,7 +46,15 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Result<Node, String> {
-        self.statements()
+        let mut statements = Vec::new();
+        loop {
+            statements.push(Box::new(self.declaration()?));
+
+            if self.current().is_none() {
+                break;
+            }
+        }
+        Ok(Node::Statements(statements))
     }
 
     fn advance(&mut self) -> Option<&Token> {
@@ -58,16 +67,35 @@ impl Parser {
         self.tokens.get(self.index)
     }
 
-    fn statements(&mut self) -> Result<Node, String> {
-        let mut statements = Vec::new();
-        loop {
-            statements.push(Box::new(self.statement()?));
-
-            if self.current().is_none() {
-                break;
-            }
+    fn declaration(&mut self) -> Result<Node, String> {
+        match self.current() {
+            Some(Token::Var) => self.var_declaration(),
+            _ => self.statement()
         }
-        Ok(Node::Statements(statements))
+    }
+
+    fn var_declaration(&mut self) -> Result<Node, String> {
+        self.advance();
+
+        let name = match self.advance() {
+            Some(Token::Identifier(name)) => name,
+            _ => return Err("expected var name".to_string())
+        }.clone();
+
+        let init = match self.current() {
+            Some(Token::Assign) => {
+                self.advance();
+                Some(Box::new(self.expression()?))
+            }
+            _ => None
+        };
+
+        match self.advance() {
+            Some(Token::Semicolon) => {}
+            _ => return Err("Expected semicolon after var declaration".to_string()),
+        }
+
+        Ok(Node::Var(name, init))
     }
 
     fn statement(&mut self) -> Result<Node, String> {
