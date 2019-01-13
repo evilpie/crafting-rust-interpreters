@@ -4,6 +4,7 @@ use std::cell::RefCell;
 
 use crate::parser::Node;
 use crate::environment::Environment;
+use crate::object::Object;
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -14,6 +15,7 @@ pub enum Value {
     NativeFunction(fn(Option<Value>, Vec<Value>) -> Value),
     Function(Vec<String>, Box<Node>, Rc<RefCell<Environment>>),
     Array(Rc<RefCell<Vec<Value>>>),
+    Object(Rc<RefCell<Object>>),
 }
 
 impl fmt::Display for Value {
@@ -26,6 +28,7 @@ impl fmt::Display for Value {
             Value::NativeFunction(_) => write!(f, "<native function>"),
             Value::Function(_, _, _) => write!(f, "<function>"),
             Value::Array(ref array) => write!(f, "<array: {}>", array.borrow().len()),
+            Value::Object(_) => write!(f, "<object>"),
         }
     }
 }

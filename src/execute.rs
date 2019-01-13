@@ -4,6 +4,7 @@ use std::cell::RefCell;
 use crate::parser::{Expr, Node};
 use crate::value::Value;
 use crate::environment::Environment;
+use crate::object::Object;
 
 #[derive(Debug)]
 pub enum VMError {
@@ -45,6 +46,12 @@ fn get(base: Value, key: Value) -> VMResult {
                 Ok(Value::NativeFunction(array_push))
             }
             _ => err("invalid key")
+        }
+    } else if let Value::Object(ref object) = base {
+        if let Value::String(ref string) = key {
+            object.borrow().get(string.clone())
+        } else {
+            err("value lookup only with string key")
         }
     } else {
         err("invalid base")
@@ -247,6 +254,10 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
 
             Ok(Value::Array(Rc::new(RefCell::new(vals?))))
         }
+        Expr::Object => {
+            let object = Object::new();
+            Ok(Value::Object(Rc::new(RefCell::new(object))))
+        }
         Expr::Assign(ref name, ref expr) => {
             let right = execute_expr(&expr, env)?;
             env.borrow_mut().set(name.to_string(), right.clone())
@@ -269,6 +280,9 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
                         Some(elem) => *elem = value.clone(),
                         _ => return err("array index of range")
                     }
+                }
+                (Value::Object(ref object), Value::String(ref string)) => {
+                    object.borrow_mut().set(string.clone(), value.clone());
                 }
                 _ => return err("array only")
             }

@@ -32,6 +32,7 @@ pub enum Expr {
     Call(Box<Expr>, Vec<Box<Expr>>),
     MethodCall(Box<Expr>, Box<Expr>, Vec<Box<Expr>>),
     Array(Vec<Box<Expr>>),
+    Object,
     Identifier(String),
     Assign(String, Box<Expr>),
     Get(Box<Expr>, Box<Expr>),
@@ -510,6 +511,7 @@ impl Parser {
             Some(Token::True) => Ok(Expr::Boolean(true)),
             Some(Token::False) => Ok(Expr::Boolean(false)),
             Some(Token::OpenBracket) => self.array(),
+            Some(Token::OpenBrace) => self.object(),
             t @ _ => Err(format!("Unexpected {:?}", t)),
         }
     }
@@ -523,6 +525,18 @@ impl Parser {
         match self.advance() {
             Some(Token::CloseBracket) => Ok(Expr::Array(values)),
             _ => Err("expecting ] after array literal".to_string())
+        }
+    }
+
+
+    fn object(&mut self) -> Result<Expr, String> {
+        // match self.current() {
+        //     Some(Token::CloseBrace) => {}
+        // };
+
+        match self.advance() {
+            Some(Token::CloseBrace) => Ok(Expr::Object),
+            _ => Err("expecting } after object literal".to_string())
         }
     }
 }

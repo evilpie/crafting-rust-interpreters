@@ -10,6 +10,7 @@ mod environment;
 mod parser;
 mod scanner;
 mod value;
+mod object;
 
 use crate::execute::execute_node;
 use crate::environment::Environment;
