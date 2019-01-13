@@ -190,8 +190,8 @@ impl Parser {
             _ => return Err("expected close parens ) after condition".to_string()),
         }
 
-        let block = self.block()?;
-        Ok(Node::While(Box::new(condition), Box::new(block)))
+        let body = self.statement()?;
+        Ok(Node::While(Box::new(condition), Box::new(body)))
     }
 
     fn for_statement(&mut self) -> Result<Node, String> {
@@ -231,7 +231,7 @@ impl Parser {
             _ => return Err("expected ) after for".to_string()),
         }
 
-        let mut body = self.block()?;
+        let mut body = self.statement()?;
 
         // Desugaring
 
@@ -264,11 +264,11 @@ impl Parser {
             _ => return Err("expected close parens ) after condition".to_string()),
         }
 
-        let then = self.block()?;
+        let then = self.statement()?;
         let other = match self.current() {
             Some(Token::Else) => {
                 self.advance();
-                self.block()?
+                self.statement()?
             }
             _ => Node::Statements(Vec::new()),
         };
