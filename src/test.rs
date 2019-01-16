@@ -20,7 +20,7 @@ fn simple_addition() {
 fn call_call() {
     assert!(parse("a()();").is_ok());
 
-    assert!(parse("1 + 1").is_err());
+    assert!(parse("a()()").is_err());
 }
 
 #[test]
