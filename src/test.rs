@@ -33,3 +33,11 @@ fn assignment() {
     assert!(parse("123 = 1 + 1;").is_err());
     assert!(parse("a = 123 = 1 + 1;").is_err());
 }
+
+#[test]
+fn for_statement() {
+    assert!(parse("for (a = 1; a < 10; i = i + 1) print i;").is_ok());
+    assert!(parse("for (a = 1; a < 10; i = i + 1) { print i; }").is_ok());
+    assert!(parse("for (var a = 1; a < 10; i = i + 1) print i;").is_ok());
+    assert!(parse("for (var a = 1; a < 10; i = i + 1) { print i; }").is_ok());
+}
