@@ -539,7 +539,8 @@ impl Parser {
                 loop {
                     let name = match self.advance() {
                         Some(Token::Identifier(name)) => name,
-                        _ => return Err("expecting identifier".to_string())
+                        Some(Token::String(string)) => string,
+                        _ => return Err("expecting identifier or string".to_string())
                     }.clone();
 
                     match self.advance() {
