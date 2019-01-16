@@ -254,8 +254,12 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
 
             Ok(Value::Array(Rc::new(RefCell::new(vals?))))
         }
-        Expr::Object => {
-            let object = Object::new();
+        Expr::Object(ref fields) => {
+            let mut object = Object::new();
+            for (name, expr) in fields {
+                let value = execute_expr(expr, env)?;
+                object.set(name.clone(), value);
+            }
             Ok(Value::Object(Rc::new(RefCell::new(object))))
         }
         Expr::Assign(ref name, ref expr) => {

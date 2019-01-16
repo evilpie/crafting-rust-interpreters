@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::scanner::Token;
 
 pub struct Parser {
@@ -32,7 +34,7 @@ pub enum Expr {
     Call(Box<Expr>, Vec<Box<Expr>>),
     MethodCall(Box<Expr>, Box<Expr>, Vec<Box<Expr>>),
     Array(Vec<Box<Expr>>),
-    Object,
+    Object(HashMap<String, Box<Expr>>),
     Identifier(String),
     Assign(String, Box<Expr>),
     Get(Box<Expr>, Box<Expr>),
@@ -530,12 +532,35 @@ impl Parser {
 
 
     fn object(&mut self) -> Result<Expr, String> {
-        // match self.current() {
-        //     Some(Token::CloseBrace) => {}
-        // };
+        let fields = match self.current() {
+            Some(Token::CloseBrace) => HashMap::new(),
+            _ => {
+                let mut fields = HashMap::new();
+                loop {
+                    let name = match self.advance() {
+                        Some(Token::Identifier(name)) => name,
+                        _ => return Err("expecting identifier".to_string())
+                    }.clone();
+
+                    match self.advance() {
+                        Some(Token::Colon) => {},
+                        _ => return Err("expecting : after identifier".to_string())
+                    };
+
+                    let expr = self.expression()?;
+                    fields.insert(name, Box::new(expr));
+
+                    match self.current() {
+                        Some(Token::Comma) => self.advance(),
+                        _ => break
+                    };
+                }
+                fields
+            }
+        };
 
         match self.advance() {
-            Some(Token::CloseBrace) => Ok(Expr::Object),
+            Some(Token::CloseBrace) => Ok(Expr::Object(fields)),
             _ => Err("expecting } after object literal".to_string())
         }
     }
