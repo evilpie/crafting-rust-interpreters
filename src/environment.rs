@@ -1,28 +1,28 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::rc::Rc;
-use std::cell::RefCell;
 
-use crate::value::Value;
 use crate::execute::{VMError, VMResult};
+use crate::value::Value;
 
 #[derive(Debug, Clone)]
 pub struct Environment {
     enclosing: Option<Rc<RefCell<Environment>>>,
-    bindings: HashMap<String, Value>
+    bindings: HashMap<String, Value>,
 }
 
 impl Environment {
     pub fn new() -> Self {
         Environment {
             enclosing: None,
-            bindings: HashMap::new()
+            bindings: HashMap::new(),
         }
     }
 
     pub fn new_enclosing(env: Rc<RefCell<Environment>>) -> Self {
         Environment {
             enclosing: Some(env),
-            bindings: HashMap::new()
+            bindings: HashMap::new(),
         }
     }
 

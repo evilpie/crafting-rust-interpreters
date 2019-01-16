@@ -14,12 +14,12 @@ pub enum Token {
     Colon,
     Comma,
     Semicolon,
-    OpenParen, // (
-    CloseParen, // )
-    OpenBracket, // [
+    OpenParen,    // (
+    CloseParen,   // )
+    OpenBracket,  // [
     CloseBracket, // ]
-    OpenBrace, // {
-    CloseBrace, // }
+    OpenBrace,    // {
+    CloseBrace,   // }
     Number(i32),
     String(String),
     Identifier(String),
@@ -50,7 +50,7 @@ fn single_token(ch: char) -> Option<Token> {
         ':' => Some(Token::Colon),
         ',' => Some(Token::Comma),
         ';' => Some(Token::Semicolon),
-        _ => None
+        _ => None,
     }
 }
 
@@ -75,9 +75,9 @@ pub fn scan(source: &str) -> Result<Vec<Token>, String> {
 
                 loop {
                     match iter.peek() {
-                        Some('a'...'z') |
-                        Some('A'...'Z') |
-                        Some('_') => name.push(iter.next().unwrap()),
+                        Some('a'...'z') | Some('A'...'Z') | Some('_') => {
+                            name.push(iter.next().unwrap())
+                        }
                         _ => break,
                     };
                 }
@@ -118,8 +118,8 @@ pub fn scan(source: &str) -> Result<Vec<Token>, String> {
                     match iter.peek() {
                         Some('"') => {
                             iter.next();
-                            break
-                        },
+                            break;
+                        }
                         Some(_) => string.push(iter.next().unwrap()),
                         _ => break,
                     };
@@ -149,7 +149,7 @@ pub fn scan(source: &str) -> Result<Vec<Token>, String> {
                     iter.next();
                     Token::GreaterEqual
                 }
-                _ => Token::Greater
+                _ => Token::Greater,
             }),
 
             '<' => tokens.push(match iter.peek() {
@@ -157,7 +157,7 @@ pub fn scan(source: &str) -> Result<Vec<Token>, String> {
                     iter.next();
                     Token::LessEqual
                 }
-                _ => Token::Less
+                _ => Token::Less,
             }),
 
             ' ' | '\n' => {

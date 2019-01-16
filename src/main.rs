@@ -1,24 +1,24 @@
-use std::fs::File;
+use std::cell::RefCell;
 use std::env;
+use std::error::Error;
+use std::fs::File;
 use std::io::prelude::*;
 use std::rc::Rc;
-use std::cell::RefCell;
-use std::error::Error;
 
-mod execute;
 mod environment;
+mod execute;
+mod object;
 mod parser;
 mod scanner;
-mod value;
-mod object;
 #[cfg(test)]
 mod test;
+mod value;
 
-use crate::execute::execute_node;
 use crate::environment::Environment;
-use crate::value::Value;
+use crate::execute::execute_node;
 use crate::parser::Parser;
 use crate::scanner::scan;
+use crate::value::Value;
 
 fn println(_base: Option<Value>, args: Vec<Value>) -> Value {
     println!("println: {:?}", args);
@@ -40,10 +40,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("{:?}", node);
 
     let env = Rc::new(RefCell::new(Environment::new()));
-    env.borrow_mut().define("println".to_string(), Value::NativeFunction(println));
+    env.borrow_mut()
+        .define("println".to_string(), Value::NativeFunction(println));
     match execute_node(&Box::new(node), &env) {
         Ok(v) => println!("ok: {}", v),
-        Err(e) => println!("error: {:?}", e)
+        Err(e) => println!("error: {:?}", e),
     }
 
     // and more! See the other methods for more details.

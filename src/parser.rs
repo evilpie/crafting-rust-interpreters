@@ -75,7 +75,7 @@ impl Parser {
         match self.current() {
             Some(Token::Var) => self.var_declaration(),
             Some(Token::Fun) => self.fun_declaration(),
-            _ => self.statement()
+            _ => self.statement(),
         }
     }
 
@@ -84,15 +84,16 @@ impl Parser {
 
         let name = match self.advance() {
             Some(Token::Identifier(name)) => name,
-            _ => return Err("expected var name".to_string())
-        }.clone();
+            _ => return Err("expected var name".to_string()),
+        }
+        .clone();
 
         let init = match self.current() {
             Some(Token::Assign) => {
                 self.advance();
                 Some(Box::new(self.expression()?))
             }
-            _ => None
+            _ => None,
         };
 
         match self.advance() {
@@ -108,8 +109,9 @@ impl Parser {
 
         let name = match self.advance() {
             Some(Token::Identifier(name)) => name,
-            _ => return Err("expected function name".to_string())
-        }.clone();
+            _ => return Err("expected function name".to_string()),
+        }
+        .clone();
 
         match self.advance() {
             Some(Token::OpenParen) => {}
@@ -118,7 +120,7 @@ impl Parser {
 
         let mut parameters: Vec<String> = Vec::new();
         match self.current() {
-            Some(Token::CloseParen) => {},
+            Some(Token::CloseParen) => {}
             _ => loop {
                 match self.advance() {
                     Some(Token::Identifier(name)) => parameters.push(name.clone()),
@@ -129,9 +131,9 @@ impl Parser {
                     Some(Token::Comma) => {
                         self.advance();
                     }
-                    _ => break
+                    _ => break,
                 }
-            }
+            },
         }
 
         match self.advance() {
@@ -177,7 +179,6 @@ impl Parser {
         Ok(Node::Return(Box::new(expr)))
     }
 
-
     fn while_statement(&mut self) -> Result<Node, String> {
         self.advance();
 
@@ -211,12 +212,12 @@ impl Parser {
                 None
             }
             Some(Token::Var) => Some(self.var_declaration()?),
-            _ => Some(self.expression_statement()?)
+            _ => Some(self.expression_statement()?),
         };
 
         let condition = match self.current() {
             Some(Token::Semicolon) => Expr::Boolean(true),
-            _ => self.expression()?
+            _ => self.expression()?,
         };
 
         match self.advance() {
@@ -226,7 +227,7 @@ impl Parser {
 
         let update = match self.current() {
             Some(Token::CloseParen) => None,
-            _ => Some(self.expression()?)
+            _ => Some(self.expression()?),
         };
 
         match self.advance() {
@@ -241,14 +242,15 @@ impl Parser {
         if let Some(update) = update {
             body = Node::Block(vec![
                 Box::new(body),
-                Box::new(Node::ExpressionStatement(Box::new(update)))]);
+                Box::new(Node::ExpressionStatement(Box::new(update))),
+            ]);
         }
 
         let while_loop = Node::While(Box::new(condition), Box::new(body));
 
         Ok(match init {
             Some(init) => Node::Block(vec![Box::new(init), Box::new(while_loop)]),
-            _ => while_loop
+            _ => while_loop,
         })
     }
 
@@ -437,7 +439,7 @@ impl Parser {
                 let expr = self.unary()?;
                 Ok(Expr::Minus(Box::new(Expr::Number(0)), Box::new(expr)))
             }
-            _ => self.call()
+            _ => self.call(),
         }
     }
 
@@ -456,20 +458,20 @@ impl Parser {
                         Some(Token::CloseBracket) => {
                             expr = Expr::Get(Box::new(expr), Box::new(key))
                         }
-                        _ => return Err("expecting ] after index".to_string())
+                        _ => return Err("expecting ] after index".to_string()),
                     }
-                },
+                }
                 Some(Token::Dot) => {
                     self.advance();
 
                     match self.advance() {
                         Some(Token::Identifier(name)) => {
                             expr = Expr::Get(Box::new(expr), Box::new(Expr::String(name.clone())))
-                        },
-                        _ => return Err("expecting indentifier after dot".to_string())
+                        }
+                        _ => return Err("expecting indentifier after dot".to_string()),
                     }
                 }
-                _ => return Ok(expr)
+                _ => return Ok(expr),
             }
         }
     }
@@ -482,7 +484,7 @@ impl Parser {
 
             match self.current() {
                 Some(Token::Comma) => self.advance(),
-                _ => break
+                _ => break,
             };
         }
         Ok(list)
@@ -493,15 +495,15 @@ impl Parser {
 
         let arguments = match self.current() {
             Some(Token::CloseParen) => Vec::new(),
-            _ => self.expression_list()?
+            _ => self.expression_list()?,
         };
 
         match self.advance() {
             Some(Token::CloseParen) => Ok(match expr {
                 Expr::Get(expr, key) => Expr::MethodCall(expr, key, arguments),
-                expr @ _ => Expr::Call(Box::new(expr), arguments)
+                expr @ _ => Expr::Call(Box::new(expr), arguments),
             }),
-            _ => Err("expecting ) after calle".to_string())
+            _ => Err("expecting ) after calle".to_string()),
         }
     }
 
@@ -521,15 +523,14 @@ impl Parser {
     fn array(&mut self) -> Result<Expr, String> {
         let values = match self.current() {
             Some(Token::CloseBracket) => Vec::new(),
-            _ => self.expression_list()?
+            _ => self.expression_list()?,
         };
 
         match self.advance() {
             Some(Token::CloseBracket) => Ok(Expr::Array(values)),
-            _ => Err("expecting ] after array literal".to_string())
+            _ => Err("expecting ] after array literal".to_string()),
         }
     }
-
 
     fn object(&mut self) -> Result<Expr, String> {
         let fields = match self.current() {
@@ -540,12 +541,13 @@ impl Parser {
                     let name = match self.advance() {
                         Some(Token::Identifier(name)) => name,
                         Some(Token::String(string)) => string,
-                        _ => return Err("expecting identifier or string".to_string())
-                    }.clone();
+                        _ => return Err("expecting identifier or string".to_string()),
+                    }
+                    .clone();
 
                     match self.advance() {
-                        Some(Token::Colon) => {},
-                        _ => return Err("expecting : after identifier".to_string())
+                        Some(Token::Colon) => {}
+                        _ => return Err("expecting : after identifier".to_string()),
                     };
 
                     let expr = self.expression()?;
@@ -553,7 +555,7 @@ impl Parser {
 
                     match self.current() {
                         Some(Token::Comma) => self.advance(),
-                        _ => break
+                        _ => break,
                     };
                 }
                 fields
@@ -562,7 +564,7 @@ impl Parser {
 
         match self.advance() {
             Some(Token::CloseBrace) => Ok(Expr::Object(fields)),
-            _ => Err("expecting } after object literal".to_string())
+            _ => Err("expecting } after object literal".to_string()),
         }
     }
 }

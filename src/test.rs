@@ -1,6 +1,6 @@
 use std::error::Error;
 
-use crate::parser::{Parser, Node};
+use crate::parser::{Node, Parser};
 use crate::scanner::scan;
 
 fn parse(source: &str) -> Result<Node, Box<dyn Error>> {

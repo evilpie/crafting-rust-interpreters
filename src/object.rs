@@ -1,17 +1,17 @@
 use std::collections::HashMap;
 
-use crate::value::Value;
 use crate::execute::{VMError, VMResult};
+use crate::value::Value;
 
 #[derive(Debug)]
 pub struct Object {
-    fields: HashMap<String, Value>
+    fields: HashMap<String, Value>,
 }
 
 impl Object {
     pub fn new() -> Self {
         Object {
-            fields: HashMap::new()
+            fields: HashMap::new(),
         }
     }
 

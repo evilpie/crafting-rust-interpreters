@@ -1,15 +1,15 @@
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
-use crate::parser::{Expr, Node};
-use crate::value::Value;
 use crate::environment::Environment;
 use crate::object::Object;
+use crate::parser::{Expr, Node};
+use crate::value::Value;
 
 #[derive(Debug)]
 pub enum VMError {
     Message(String),
-    Return(Value)
+    Return(Value),
 }
 
 pub type VMResult = Result<Value, VMError>;
@@ -36,16 +36,14 @@ fn get(base: Value, key: Value) -> VMResult {
 
                 match array.borrow().get(n as usize) {
                     Some(v) => Ok(v.clone()),
-                    _ => err("array index of range")
+                    _ => err("array index of range"),
                 }
             }
             Value::String(ref string) if string == "length" => {
                 Ok(Value::Number(array.borrow().len() as i32))
             }
-            Value::String(ref string) if string == "push" => {
-                Ok(Value::NativeFunction(array_push))
-            }
-            _ => err("invalid key")
+            Value::String(ref string) if string == "push" => Ok(Value::NativeFunction(array_push)),
+            _ => err("invalid key"),
         }
     } else if let Value::Object(ref object) = base {
         if let Value::String(ref string) = key {
@@ -58,19 +56,26 @@ fn get(base: Value, key: Value) -> VMResult {
     }
 }
 
-fn call(callee: Value, base: Option<Value>, arguments: &Vec<Box<Expr>>, env: &Rc<RefCell<Environment>>) -> VMResult {
+fn call(
+    callee: Value,
+    base: Option<Value>,
+    arguments: &Vec<Box<Expr>>,
+    env: &Rc<RefCell<Environment>>,
+) -> VMResult {
     match callee {
         Value::NativeFunction(ref fun) => {
-            let args: Result<Vec<Value>, _> = arguments.iter().map(|arg| {
-                execute_expr(&arg, env)
-            }).collect();
+            let args: Result<Vec<Value>, _> = arguments
+                .iter()
+                .map(|arg| execute_expr(&arg, env))
+                .collect();
 
             Ok(fun(base, args?))
-        },
+        }
         Value::Function(ref parameters, ref body, ref scope) => {
-            let args: Result<Vec<Value>, _> = arguments.iter().map(|arg| {
-                execute_expr(&arg, env)
-            }).collect();
+            let args: Result<Vec<Value>, _> = arguments
+                .iter()
+                .map(|arg| execute_expr(&arg, env))
+                .collect();
 
             // ToDo: argument count != paramter count
             let local = Rc::new(RefCell::new(Environment::new_enclosing(scope.clone())));
@@ -81,10 +86,10 @@ fn call(callee: Value, base: Option<Value>, arguments: &Vec<Box<Expr>>, env: &Rc
             match execute_node(&body, &local) {
                 Err(VMError::Return(v)) => Ok(v.clone()),
                 e @ Err(_) => e,
-                Ok(_) => Ok(Value::Nothing) // No implicit return!
+                Ok(_) => Ok(Value::Nothing), // No implicit return!
             }
         }
-        _ => err("expected function callee")
+        _ => err("expected function callee"),
     }
 }
 
@@ -99,9 +104,7 @@ pub fn execute_node(node: &Box<Node>, env: &Rc<RefCell<Environment>>) -> VMResul
             Ok(last)
         }
 
-        Node::ExpressionStatement(ref expr) => {
-            execute_expr(&expr, env)
-        }
+        Node::ExpressionStatement(ref expr) => execute_expr(&expr, env),
 
         Node::Block(ref statements) => {
             let block_scope = Rc::new(RefCell::new(Environment::new_enclosing(env.clone())));
@@ -115,7 +118,7 @@ pub fn execute_node(node: &Box<Node>, env: &Rc<RefCell<Environment>>) -> VMResul
         Node::Var(ref name, ref init) => {
             let value = match init {
                 Some(ref expr) => execute_expr(expr, env)?,
-                None => Value::Nothing
+                None => Value::Nothing,
             };
 
             env.borrow_mut().define(name.clone(), value.clone());
@@ -124,7 +127,10 @@ pub fn execute_node(node: &Box<Node>, env: &Rc<RefCell<Environment>>) -> VMResul
 
         Node::Fun(ref name, ref parameters, ref body) => {
             // ToDo: This probably leaks the environment.
-            env.borrow_mut().define(name.clone(), Value::Function(parameters.clone(), body.clone(), env.clone()));
+            env.borrow_mut().define(
+                name.clone(),
+                Value::Function(parameters.clone(), body.clone(), env.clone()),
+            );
             Ok(Value::Nothing)
         }
 
@@ -149,7 +155,7 @@ pub fn execute_node(node: &Box<Node>, env: &Rc<RefCell<Environment>>) -> VMResul
             }
 
             Ok(Value::Nothing)
-        },
+        }
 
         Node::If(ref condition, ref then, ref other) => match execute_expr(&condition, env)? {
             Value::Boolean(true) => execute_node(&then, env),
@@ -248,9 +254,8 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
             call(callee, Some(base), arguments, env)
         }
         Expr::Array(ref values) => {
-            let vals: Result<Vec<Value>, _> = values.iter().map(|arg| {
-                execute_expr(&arg, env)
-            }).collect();
+            let vals: Result<Vec<Value>, _> =
+                values.iter().map(|arg| execute_expr(&arg, env)).collect();
 
             Ok(Value::Array(Rc::new(RefCell::new(vals?))))
         }
@@ -282,13 +287,13 @@ fn execute_expr(expr: &Box<Expr>, env: &Rc<RefCell<Environment>>) -> VMResult {
                 (Value::Array(ref array), Value::Number(n)) if n >= 0 => {
                     match array.borrow_mut().get_mut(n as usize) {
                         Some(elem) => *elem = value.clone(),
-                        _ => return err("array index of range")
+                        _ => return err("array index of range"),
                     }
                 }
                 (Value::Object(ref object), Value::String(ref string)) => {
                     object.borrow_mut().set(string.clone(), value.clone());
                 }
-                _ => return err("array only")
+                _ => return err("array only"),
             }
 
             Ok(value)
