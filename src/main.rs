@@ -4,6 +4,7 @@ use std::env;
 use std::io::prelude::*;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::error::Error;
 
 mod execute;
 mod environment;
@@ -23,30 +24,25 @@ fn println(_base: Option<Value>, args: Vec<Value>) -> Value {
     Value::Nothing
 }
 
-fn main() -> io::Result<()> {
-    let name = match env::args().nth(1) {
-        Some(name) => name,
-        _ => panic!("missing file argument")
-    };
+fn main() -> Result<(), Box<dyn Error>> {
+    let name = env::args().nth(1).ok_or("missing file argument")?;
     let mut f = File::open(name)?;
 
     let mut buffer = String::new();
     f.read_to_string(&mut buffer)?;
 
-    let tokens = scan(&buffer);
+    let tokens = scan(&buffer)?;
     println!("{:?}", tokens);
 
-    let mut parser = Parser::new(tokens.unwrap());
-    let node = parser.parse();
+    let mut parser = Parser::new(tokens);
+    let node = parser.parse()?;
     println!("{:?}", node);
 
-    if node.is_ok() {
-        let env = Rc::new(RefCell::new(Environment::new()));
-        env.borrow_mut().define("println".to_string(), Value::NativeFunction(println));
-        match execute_node(&Box::new(node.unwrap()), &env) {
-            Ok(v) => println!("ok: {}", v),
-            Err(e) => println!("error: {:?}", e)
-        }
+    let env = Rc::new(RefCell::new(Environment::new()));
+    env.borrow_mut().define("println".to_string(), Value::NativeFunction(println));
+    match execute_node(&Box::new(node), &env) {
+        Ok(v) => println!("ok: {}", v),
+        Err(e) => println!("error: {:?}", e)
     }
 
     // and more! See the other methods for more details.
