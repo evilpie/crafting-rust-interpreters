@@ -11,6 +11,8 @@ mod parser;
 mod scanner;
 mod value;
 mod object;
+#[cfg(test)]
+mod test;
 
 use crate::execute::execute_node;
 use crate::environment::Environment;
